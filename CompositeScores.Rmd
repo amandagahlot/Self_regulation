@@ -1,0 +1,547 @@
+---
+title: "Converting TBI-QOL Composite Scores"
+author: "Amanda Gahlot"
+date: "3/12/24"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+
+# Set up 
+
+```{r prelims, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+
+```{r packages}
+library(tidyverse)
+library(psych)
+library(readxl)
+```
+
+## Import data
+
+```{r set wd, include=FALSE}
+setwd("/Users/amandagahlot/Documents/Dissertation/Self_regulation")
+```
+
+```{r}
+df <- read_excel('/Users/amandagahlot/Documents/Dissertation/SR_Final.xlsx')
+
+print(head(df))
+```
+
+# Cleaning Data
+
+1. Combining TBI-QOL scores: Tyner et al (2020) Development of Composite Scores for the TBI-QOL
+  a. Physical Health Composite: Fatigue + Pain Interference
+  b. Cognitive Health Composite: Executive functioning + cognition-general concerns
+  c. Emotional Health Composite: Anger + Anxiety + Depression
+  d. Social Health Composite: Ability to participate in social roles and activities +  Satisfaction with social roles and activities
+  e. Global QOL Composite: Physical+Emotional+Cognitive+Social health composite scores
+
+### TBO-QOL Composite Index Scores
+#### Physical Health 
+```{r phys, results='asis', echo=FALSE}
+#Physical Health Add fatigue and pain scores
+df$phys_health <- df$tbiqol_fatigue_tscore + df$tbiqol_pain_tscore
+show(df$phys_health)
+```
+
+```{r phys_mutate, results='asis', echo=FALSE, include=FALSE}
+# create Physical Health index score using guidelines from Tyner et al
+
+df <- df %>%
+  mutate(phys_health_index = case_when(
+    phys_health > 164.7 ~ 60,
+    between(phys_health, 149.3,164.6) ~ 61,
+    between(phys_health, 149.0,149.2)	~ 62,  
+    between(phys_health, 146.7,148.9)	~63,
+    between(phys_health, 142.1,146.6)	~64,  
+    between(phys_health, 141.5,142.0)	~65,
+    between(phys_health, 140.8,141.4)	~66,
+    between(phys_health, 140.2,140.7)	~67,
+    between(phys_health, 139.4,140.1)	~68,
+    between(phys_health, 138.7,139.3)	~69,
+    between(phys_health, 138.5,138.6)	~70,
+    between(phys_health, 138.3,138.4)	~71,
+    between(phys_health, 137.0,138.2)	~72,
+    between(phys_health, 136.4,136.9)	~73,
+    between(phys_health, 135.6,136.3)	~74,
+    between(phys_health, 132.0,135.5)	~75,
+    between(phys_health, 131.0,131.9)	~76,
+    between(phys_health, 130.5,130.9)	~77,
+    between(phys_health, 129.9,130.4)	~78,  
+    between(phys_health, 129.4,129.8)	~79,
+    between(phys_health, 127.9,129.3)	~80,
+    between(phys_health, 126.6,127.8)	~81,
+    between(phys_health, 124.5,126.5)	~82,
+    between(phys_health, 123.7,124.4)	~83,
+    between(phys_health, 122.7,123.6)	~84,
+    between(phys_health, 121.6,122.6)	~85,
+    between(phys_health, 120.2,121.5)	~86,
+    between(phys_health, 119.7,120.1)	~87,
+    between(phys_health, 118.7,119.6)	~88,
+    between(phys_health, 118.1,118.6)	~89,
+    between(phys_health, 117.1,118.0)	~90,
+    between(phys_health, 116.0,117.0)	~91,
+    between(phys_health, 114.0,115.9)	~92,
+    between(phys_health, 113.0,113.9)	~93,
+    between(phys_health, 111.8,112.9)	~94,
+    between(phys_health, 110.5,111.7)	~95,
+    between(phys_health, 109.2,110.4)	~96,
+    between(phys_health, 107.8,109.1)	~97,
+    between(phys_health, 106.2,107.7)	~98,
+    between(phys_health, 105.0,106.1)	~99,
+    between(phys_health, 104.1,104.9)	~100,
+    between(phys_health, 102.5,104.0)	~101,
+    between(phys_health, 101.7,102.4)	~102,
+    between(phys_health, 99.1,101.6)	~103,
+    between(phys_health, 97.8,99.0)	~104,
+    between(phys_health, 96.7,97.7)	~105,
+    between(phys_health, 94.6,96.6)	~106,
+    between(phys_health, 93.1,94.5)	~107,
+    between(phys_health, 91.3,93.0)	~108,
+    between(phys_health, 89.2,91.2)	~109,
+    between(phys_health, 87.8,89.1)	~110,
+    between(phys_health, 87.1,87.7)	~111,
+    between(phys_health, 86.2,87.0)	~112,
+    between(phys_health, 84.3,86.1)	~113,
+    between(phys_health, 83.4,84.2)	~114,
+    between(phys_health, 83.0,83.3)	~115,
+    between(phys_health, 82.7,82.9)	~116,
+    between(phys_health, 81.4,82.6)	~117,
+    between(phys_health, 80.7,81.3)	~118,
+    between(phys_health, 79.9,80.6)	~119,
+    between(phys_health, 79.0,79.8)	~120,
+    between(phys_health, 77.9,78.9)	~121,
+    between(phys_health, 77.7,77.8)	~122,
+    between(phys_health, 76.8,77.6)	~123,
+    between(phys_health, 75.3,76.7)	~124,
+    between(phys_health, 75.1,75.2)	~125,
+    between(phys_health, 73.0,75.0)	~126,
+    between(phys_health, 72.7,72.9)	~127,
+    between(phys_health, 72.0,72.6)	~128,
+    between(phys_health, 71.8,71.9)	~129,
+    between(phys_health, 70.5,71.7)	~130,
+    between(phys_health, 69.8,70.4)	~131,
+    phys_health == 69.7 ~ 132,
+    phys_health == 69.6	~133,
+    phys_health == 69.5	~134,
+    phys_health == 69.4	~135,
+    phys_health == 69.3	~136,
+    between(phys_health,  69.1,69.2)	~137,
+    phys_health == 69	~138,
+    between(phys_health, 68.8,68.9)	~139,
+    phys_health < 68.7 ~ 140,
+    TRUE ~ NA_real_  # NA for other cases
+  ))
+    
+show(df$phys_health_index)
+```
+
+#### Emotional Health
+```{r emo, results='asis', echo=FALSE}
+#Emotional Health add anger, anxiety, and depression
+df$emo_health <- df$tbiqol_anger_tscore + df$tbiqol_anxiety_tscore + df$tbiqol_depression_tscore
+show(df$emo_health)
+```
+
+```{r emo_mutate, results='asis', echo=FALSE, include=FALSE}
+#Convert to emotional health index score using Tyner et al.
+df <- df %>%
+  mutate(emo_health_index = case_when(
+    emo_health >= 245.6	~57,
+    emo_health == 245.5	~58,
+    emo_health == 245.4	~59,
+    between(emo_health, 237.2, 245.3) ~60,
+    between(emo_health, 228.2, 237.1)	~61,
+    between(emo_health, 219.0, 228.1)	~62,
+    between(emo_health, 218.6, 218.9)	~63,
+    between(emo_health, 217.6, 218.5)	~64,
+    between(emo_health, 216.5, 217.5)	~65,
+    between(emo_health, 215.5, 216.4)	~66,
+    between(emo_health, 214.2, 215.4)	~67,
+    between(emo_health, 213.7, 214.1)	~68,
+    between(emo_health, 211.3, 213.6)	~69,
+    between(emo_health, 210.9, 211.2)	~70,
+    between(emo_health, 207.5, 210.8)	~71,
+    between(emo_health, 205.1, 207.4)	~72,
+    between(emo_health, 204.0, 205.0)	~73,
+    between(emo_health, 202.9, 203.9)	~74,
+    between(emo_health, 202.0, 202.8)	~75,
+    between(emo_health, 201.5, 201.9)	~76,
+    between(emo_health, 200.5, 201.4)	~77,
+    between(emo_health, 198.7, 200.4)	~78,
+    between(emo_health, 197.4, 198.6)	~79,
+    between(emo_health, 194.9, 197.3)	~80,
+    between(emo_health, 193.9, 194.8)	~81,
+    between(emo_health, 189.7, 193.8)	~82,
+    between(emo_health, 187.4, 189.6)	~83,
+    between(emo_health, 187.1, 187.3)	~84,
+    between(emo_health, 184.5, 187.0)	~85,
+    between(emo_health, 182.7, 184.4)	~86,
+    between(emo_health, 181.5, 182.6)	~87,
+    between(emo_health, 180.2, 181.4)	~88,
+    between(emo_health, 178.8, 180.1)	~89,
+    between(emo_health, 177.7, 178.7)	~90,
+    between(emo_health, 175.5, 177.6)	~91,
+    between(emo_health, 173.4, 175.4)	~92,
+    between(emo_health, 171.5, 173.3)	~93,
+    between(emo_health, 170.1, 171.4)	~94,
+    between(emo_health, 168.1, 170.0)	~95,
+    between(emo_health, 166.4, 168.0)	~96,
+    between(emo_health, 164.1, 166.3)	~97,
+    between(emo_health, 162.5, 164.0)	~98,
+    between(emo_health, 161.6, 162.4)	~99,
+    between(emo_health, 159.3, 161.5)	~100,
+    between(emo_health, 156.7, 159.2)	~101,
+    between(emo_health, 155.7, 156.6)	~102,
+    between(emo_health, 153.6, 155.6)	~103,
+    between(emo_health, 151.2, 153.5)	~104,
+    between(emo_health, 149.7, 151.1)	~105,
+    between(emo_health, 148.1, 149.6)	~106,
+    between(emo_health, 145.9, 148.0)	~107,
+    between(emo_health, 144.8, 145.8)	~108,
+    between(emo_health, 142.7, 144.7)	~109,
+    between(emo_health, 141.2, 142.6)	~110,
+    between(emo_health, 139.9, 141.1)	~111,
+    between(emo_health, 138.3, 139.8)	~112,
+    between(emo_health, 136.6, 138.2)	~113,
+    between(emo_health, 135.2, 136.5)	~114,
+    between(emo_health, 131.1, 135.1)	~115,
+    between(emo_health, 128.0, 131.0)	~116,
+    between(emo_health, 126.9, 127.9)	~117,
+    between(emo_health, 125.1, 126.8)	~118,
+    between(emo_health, 122.6, 125.0)	~119,
+    between(emo_health, 121.4, 122.5)	~120,
+    between(emo_health, 119.5, 121.3)	~121,
+    between(emo_health, 117.9, 119.4)	~122,
+    between(emo_health, 114.9, 117.8)	~123,
+    between(emo_health, 113.4, 114.8)	~124,
+    between(emo_health, 111.9, 113.3)	~125,
+    between(emo_health, 111.2, 111.8)	~126,
+    between(emo_health, 110.7, 111.1)	~127,
+    between(emo_health, 110.2, 110.6)	~128,
+    between(emo_health, 107.9, 110.1)	~129,
+    between(emo_health, 107.5, 107.8)	~130,
+    between(emo_health, 106.0, 107.4)	~131,
+    between(emo_health, 103.5, 105.9)	~132,
+    between(emo_health, 102.6, 103.4)	~133,
+    between(emo_health, 102.0, 102.5)	~134,
+    between(emo_health, 101.4, 101.9)	~135,
+    between(emo_health, 101.2, 101.3)	~136,
+    between(emo_health, 101.0, 101.1)	~137,
+    between(emo_health, 100.5, 100.9)	~138,
+    between(emo_health, 99.7, 100.4)	~139,
+    between(emo_health, 97.8, 99.6)	~140,
+    emo_health <= 97.7 ~ 141,
+    TRUE ~ NA_real_  # NA for other cases
+  ))
+
+show(df$emo_health_index)
+```
+
+#### Cognitive Health
+```{r cog, results='asis', echo=FALSE, include=FALSE}
+#Cognitive Health add executive functioning and general concerns
+df$cog_health <- df$tbiqol_execfunc_tscore + df$tbiqol_genconcern_tscore
+show(df$cog_health)
+```
+
+```{r cog_mutate, results='asis', echo=FALSE}
+#Convert to cognitive health index score using Tyner et al.
+df <- df %>%
+  mutate(cog_health_index = case_when(
+    cog_health <= 36.4	~57,
+    cog_health == 36.5	~58,
+    between(cog_health, 36.6, 36.7)	~59,
+    between(cog_health, 36.8, 39.6)	~60,
+    between(cog_health, 39.7, 40.6)	~61,
+    between(cog_health, 40.7, 45.0)	~62,
+    cog_health == 45.1	~63,
+    cog_health == 45.2	~64,
+    cog_health == 45.3	~65,
+    cog_health == 45.4	~66,
+    between(cog_health, 45.5, 46.8)	~67,
+    between(cog_health, 46.9, 47.5)	~68,
+    between(cog_health, 47.6, 48.1)	~69,
+    between(cog_health, 48.2, 48.3)	~70,
+    between(cog_health, 48.4, 48.8)	~71,
+    between(cog_health, 48.9, 50.9)	~72,
+    between(cog_health, 51.0, 51.5)	~73,
+    between(cog_health, 51.6, 53.1)	~74,
+    between(cog_health, 53.2, 54.5)	~75,
+    between(cog_health, 54.6, 56.1)	~76,
+    between(cog_health, 56.2, 56.7)	~77,
+    between(cog_health, 56.8, 57.4)	~78,
+    between(cog_health, 57.5, 58.2)	~79,
+    between(cog_health, 58.3, 58.9)	~80,
+    between(cog_health, 59.0, 59.6)	~81,
+    between(cog_health, 59.7, 60.8)	~82,
+    between(cog_health, 60.9, 61.1)	~83,
+    between(cog_health, 61.2, 61.6)	~84,
+    between(cog_health, 61.7, 62.2)	~85,
+    between(cog_health, 62.3, 63.6)	~86,
+    between(cog_health, 63.7, 64.2)	~87,
+    between(cog_health, 64.3, 64.9)	~88,
+    between(cog_health, 65.0, 66.3)	~89,
+    between(cog_health, 66.4, 67.5)	~90,
+    between(cog_health, 67.6, 68.2)	~91,
+    between(cog_health, 68.3, 70.1)	~92,
+    between(cog_health, 70.2, 70.3)	~93,
+    between(cog_health, 70.4, 71.0)	~94,
+    between(cog_health, 71.1, 72.3)	~95,
+    between(cog_health, 72.4, 72.9)	~96,
+    between(cog_health, 73.0, 74.2)	~97,
+    between(cog_health, 74.3, 74.7)	~98,
+    between(cog_health, 74.8, 75.0)	~99,
+    between(cog_health, 75.1, 76.6)	~100,
+    between(cog_health, 76.7, 77.8)	~101,
+    between(cog_health, 77.9, 78.6)	~102,
+    between(cog_health, 78.7, 79.7)	~103,
+    between(cog_health, 79.8, 80.7)	~104,
+    between(cog_health, 80.8, 81.8)	~105,
+    between(cog_health, 81.9, 82.7)	~106,
+    between(cog_health, 82.8, 84.4)	~107,
+    between(cog_health, 84.5, 84.9)	~108,
+    between(cog_health, 85.0, 86.1)	~109,
+    between(cog_health, 86.2, 87.6)	~110,
+    between(cog_health, 87.7, 89.3)	~111,
+    between(cog_health, 89.4, 90.2)	~112,
+    between(cog_health, 90.3, 91.3)	~113,
+    between(cog_health, 91.4, 91.8)	~114,
+    between(cog_health, 91.9, 92.9)	~115,
+    between(cog_health, 93.0, 93.8)	~116,
+    between(cog_health, 93.9, 95.2)	~117,
+    between(cog_health, 95.3, 95.6)	~118,
+    between(cog_health, 95.7, 99.1)	~119,
+    between(cog_health, 99.2, 100.7)	~120,
+    between(cog_health, 100.8, 102.4)	~121,
+    between(cog_health, 102.5, 104.4)	~122,
+    between(cog_health, 104.5, 105.5)	~123,
+    between(cog_health, 105.6, 106.8)	~124,
+    between(cog_health, 106.9, 107.5)	~125,
+    between(cog_health, 107.6, 107.7)	~126,
+    between(cog_health, 107.8, 108.3)	~127,
+    between(cog_health, 108.4, 108.5)	~128,
+    between(cog_health, 108.6, 110.8)	~129,
+    cog_health >= 110.9 ~ 130,
+    TRUE ~ NA_real_  # NA for other cases
+  ))
+
+show(df$cog_health_index)
+```
+
+#### Social Health
+```{r soc, results='asis', echo=FALSE}
+#Cognitive Health add ability to participate in social roles and activities and satisfaction with social roles and activities
+df$soc_health <- df$tbiqol_part_sra_tscore + df$tbiqol_satissra_tscore
+show(df$soc_health)
+```
+
+```{r soc_convert, results='asis', echo=FALSE, include=FALSE}
+#Convert to social health index score (Tyner et al)
+df <- df %>%
+  mutate(soc_health_index = case_when(
+    soc_health <= 66.6	~57,
+    soc_health == 66.7	~58,
+    between(soc_health, 66.8, 66.9)	~59,
+    between(soc_health, 67.0, 69.2)	~60,
+    soc_health == 69.3	~61,
+    soc_health == 69.4	~62,
+    soc_health == 69.5	~63,
+    soc_health == 69.6	~64,
+    soc_health == 69.7	~65,
+    soc_health == 69.8	~66,
+    between(soc_health, 69.9, 71.9)	~67,
+    between(soc_health, 72.0, 72.3)	~68,
+    between(soc_health, 72.4, 72.9)	~69,
+    between(soc_health, 73.0, 74.1)	~70,
+    between(soc_health, 74.2, 74.8)	~71,
+    between(soc_health, 74.9, 75.5)	~72,
+    between(soc_health, 75.6, 75.7)	~73,
+    between(soc_health, 75.8, 75.9)	~74,
+    between(soc_health, 76.0, 76.4)	~75,
+    between(soc_health, 76.5, 76.8)	~76,
+    between(soc_health, 76.9, 77.9)	~77,
+    between(soc_health, 78.0, 78.4)	~78,
+    between(soc_health, 78.5, 78.8)	~79,
+    between(soc_health, 78.9, 80.2)	~80,
+    between(soc_health, 80.3, 80.8)	~81,
+    between(soc_health, 80.9, 81.3)	~82,
+    between(soc_health, 81.4, 82.1)	~83,
+    between(soc_health, 82.2, 82.6)	~84,
+    between(soc_health, 82.7, 83.2)	~85,
+    between(soc_health, 83.3, 83.7)	~86,
+    between(soc_health, 83.8, 84.2)	~87,
+    between(soc_health, 84.3, 84.8)	~88,
+    between(soc_health, 84.9, 85.5)	~89,
+    between(soc_health, 85.6, 86.6)	~90,
+    between(soc_health, 86.7, 87.9)	~91,
+    between(soc_health, 88.0, 90.0)	~92,
+    between(soc_health, 90.1, 90.6)	~93,
+    between(soc_health, 90.7, 91.7)	~94,
+    between(soc_health, 91.8, 92.7)	~95,
+    between(soc_health, 92.8, 94.4)	~96, 
+    between(soc_health, 94.5, 95.9)	~97,
+    between(soc_health, 96.0, 96.7)	~98,
+    between(soc_health, 96.8, 97.7)	~99,
+    between(soc_health, 97.8, 99.3)	~100,
+    between(soc_health, 99.4, 100.9)	~101,
+    between(soc_health, 101.0, 101.4)	~102,
+    between(soc_health, 101.5, 103.0)	~103,
+    between(soc_health, 103.1, 103.7)	~104,
+    between(soc_health, 103.8, 104.9)	~105,
+    between(soc_health, 105.0, 106.3)	~106,
+    between(soc_health, 106.4, 107.4)	~107,
+    between(soc_health, 107.5, 108.3)	~108,
+    between(soc_health, 108.4, 109.6)	~109,
+    between(soc_health, 109.7, 110.4)	~110,
+    between(soc_health, 110.5, 112.0)	~111,
+    between(soc_health, 112.1, 113.4)	~112,
+    between(soc_health, 113.5, 115.0)	~113,
+    between(soc_health, 115.1, 115.4)	~114,
+    between(soc_health, 115.5, 117.4)	~115,
+    between(soc_health, 117.5, 118.3)	~116,
+    soc_health ==118.4	~117,
+    soc_health ==118.5	~118,
+    between(soc_health, 118.6, 121.7)	~119,
+    soc_health ==121.8	~120,
+    soc_health ==121.9	~121,
+    soc_health >= 122.0 ~ 122
+  ))
+
+show(df$soc_health_index)
+```
+
+#### Global Health Scores
+
+```{r glob, results='asis', echo=FALSE}
+#Global Health sum of index scores (physical, emotional, cognitive, and social)
+df$glob_health <- df$phys_health_index + df$emo_health_index + df$cog_health_index + df$soc_health_index
+
+show(df$glob_health)
+```
+
+```{r glob_mutate, echo=FALSE, include=FALSE}
+#Calculate Global Health Index (Tyner et al)
+df <- df %>%
+  mutate(glob_health_index = case_when(
+    glob_health <= 264	~57,
+    glob_health == 265	~58,
+    glob_health == 266	~59,
+    glob_health == 267	~60,
+    between(glob_health, 268, 271)	~61,
+    glob_health == 272	~62,
+    glob_health == 273	~63,
+    between(glob_health, 274, 278)	~64,
+    between(glob_health, 279, 280)	~65,
+    between(glob_health, 281, 289)	~66,
+    between(glob_health, 290, 292)	~67,
+    between(glob_health, 293, 296)	~68,
+    glob_health == 297	~69,
+    between(glob_health, 298, 301)	~70,
+    between(glob_health, 302, 303)	~71,
+    between(glob_health, 304, 305)	~72,
+    between(glob_health, 306, 307)	~73,
+    glob_health == 308	~74,
+    between(glob_health, 309, 318)	~75,
+    between(glob_health, 319, 320)	~76,
+    between(glob_health, 321, 324)	~77,
+    between(glob_health, 325, 330)	~78,
+    between(glob_health, 331, 333)	~79,
+    glob_health == 334	~80,
+    between(glob_health, 335, 337)	~81,
+    between(glob_health, 338, 339)	~82,
+    glob_health == 340	~83,
+    between(glob_health, 341, 343)	~84,
+    between(glob_health, 344, 346)	~85,
+    between(glob_health, 347, 351)	~86,
+    between(glob_health, 352, 353)	~87,
+    between(glob_health, 354, 357)	~88,
+    between(glob_health, 358, 359)	~89,
+    between(glob_health, 360, 361)	~90,
+    between(glob_health, 362, 365)	~91,
+    between(glob_health, 366, 371)	~92,
+    between(glob_health, 372, 375)	~93,
+    between(glob_health, 376, 377)	~94,
+    between(glob_health, 378, 384)	~95,
+    between(glob_health, 385, 387)	~96,
+    between(glob_health, 388, 393)	~97,
+    between(glob_health, 394, 397)	~98,
+    between(glob_health, 398, 399)	~99,
+    between(glob_health, 400, 403)	~100,
+    between(glob_health, 404, 406)	~101,
+    between(glob_health, 407, 409)	~102,
+    between(glob_health, 410, 412)	~103,
+    between(glob_health, 413, 416)	~104,
+    between(glob_health, 417, 418)	~105,
+    between(glob_health, 419, 423)	~106,
+    between(glob_health, 424, 426)	~107,
+    between(glob_health, 427, 429)	~108,
+    between(glob_health, 430, 435)	~109,
+    between(glob_health, 436, 438)	~110,
+    between(glob_health, 439, 442)	~111,
+    between(glob_health, 443, 445)	~112,
+    between(glob_health, 446, 447)	~113,
+    between(glob_health, 448, 450)	~114,
+    between(glob_health, 451, 452)	~115,
+    between(glob_health, 453, 456)	~116,
+    glob_health == 457	~117,
+    glob_health == 458	~118,
+    between(glob_health, 459, 466)	~119,
+    between(glob_health, 467, 469)	~120,
+    between(glob_health, 470, 472)	~121,
+    glob_health == 473	~122,
+    between(glob_health, 474, 475)	~123,
+    between(glob_health, 476, 479)	~124,
+    between(glob_health, 480, 481)	~125,
+    between(glob_health, 482, 483)	~126,
+    between(glob_health, 484, 486)	~127,
+    between(glob_health, 487, 489)	~128,
+    glob_health == 490	~129,
+    glob_health == 491	~130,
+    glob_health == 492	~131,
+    between(glob_health, 493, 498)	~132,
+    glob_health == 499	~133,
+    between(glob_health, 500, 502)	~134,
+    between(glob_health, 503, 504)	~135,
+    glob_health == 505	~136,
+    between(glob_health, 506, 509)	~137,
+    between(glob_health, 510, 511)	~138,
+    glob_health == 512	~139,
+    glob_health == 513	~140,
+    glob_health == 514	~141,
+    glob_health == 515	~142,
+    between(glob_health, 516, 517)	~143,
+    glob_health == 518	~144,
+    glob_health >= 519 ~ 145,
+    TRUE ~ NA_real_  # NA for other cases
+  ))
+
+show(df$glob_health_index)
+```
+
+# Export new file
+
+```{r}
+# Install and load the openxlsx package
+install.packages("openxlsx")
+library(openxlsx)
+
+# Assuming df is your data frame
+write.xlsx(df, file = "cleaned_data_Final.xlsx", rowNames = FALSE)
+
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

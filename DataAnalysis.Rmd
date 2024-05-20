@@ -1,0 +1,1744 @@
+---
+title: "Data Analysis"
+author: "Amanda Gahlot"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r prelims, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+# Set up
+
+```{r set wd, include=FALSE}
+setwd("/Users/amandagahlot/Documents/Dissertation/Self_regulation")
+```
+
+```{r setup, include=FALSE}
+
+#rm(list = ls(all = TRUE))  y
+
+
+library(tidyverse)
+library(psych)
+library(data.table)
+library(sjPlot) 
+library(sjmisc) 
+library(sjlabelled) 
+library(gtsummary)
+library(readxl)
+```
+
+## Import Data
+
+```{r import, echo=FALSE, include=FALSE}
+
+df <- read_excel('/Users/amandagahlot/Documents/Dissertation/R_Output/cleaned_data_Final.xlsx')
+
+print(head(df))
+```
+
+# Tables by Severity
+
+## Demographic  
+The table below provides demographic information based on severity of injury
+
+```{r demo df, echo=FALSE, include=FALSE}
+df_demo <- df
+
+```
+
+```{r rename, echo=TRUE}
+# level naming for categorical variables
+df_demo$gender <- factor(df_demo$gender,
+                   levels = c(1,2,3),
+                   labels = c("Male", "Female", "Nonbinary"))
+
+df_demo$work_current <- factor(df_demo$work_current,
+                   levels = c(1,0),
+                   labels = c("Yes", "No"))
+
+df_demo$severity <- factor(df_demo$severity,
+                   levels = c(2,3),
+                   labels = c("Moderate", "Severe"))
+
+df_demo$mech_injury <- factor(df_demo$mech_injury,
+                   levels = c(1,2,3,4,5),
+                   labels = c("Fall", "MVC", "Sports", "Violence", "Pedestrian struck"))
+
+df_demo$income <- factor(df_demo$income,
+                   levels = c(1,2,3),
+                   labels = c("<52K", "52K-156K", ">156K"))
+
+df_demo$marital_status <- factor(df_demo$marital_status,
+                                 levels = c(1, 2, 3, 4),
+                                 labels = c("Single", "Married", "Divorced", "Widowed"))
+
+```
+
+```{r table, results='asis', echo=FALSE, include=TRUE}
+demo_table <- df_demo %>%
+  subset(., select = c(age_current, time_injury, gender, edu, race, work_current, income, house_size, marital_status, substance, severity, mech_injury)) %>%
+  tbl_summary(
+    missing = "no",
+    by = severity,
+    type = list(
+      c(age_current, edu, house_size, substance, time_injury) ~ "continuous",
+      c(gender, income, work_current, severity, mech_injury) ~ "categorical"
+    ),
+    statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)"),
+    label = list(
+      age_current ~ "Age (years)",
+      time_injury ~ "Time since TBI (years)",
+      gender ~ "Gender",
+      race ~ "Race/Ethnicity",
+      edu ~ "Education (years)",
+      work_current ~ "Employment status",
+      income ~ "Annual household income",
+      house_size ~ "Size household",
+      marital_status ~ "Marital status",
+      substance ~ "Substance use score",
+      mech_injury ~ "Cause of injury",
+      severity ~ "Severity of Injury"
+    )
+  ) %>%
+  add_p(
+    test = list(all_continuous() ~ "t.test", all_categorical() ~ "chisq.test"),
+    pvalue_fun = ~style_pvalue(.x, digits = 2)
+  ) %>%
+  add_n()
+
+print(demo_table)   
+```
+```{r save table, echo=FALSE, include=FALSE}
+#to save table to word doc
+library(gt)
+library(gtsummary)
+
+gt_demo_table <- as_gt(demo_table)
+   gtsave(gt_demo_table, filename = "demo_table_1.docx")
+```
+
+## ACS 
+ACS3 (activity re-engagement scores - outcome measure) by severity of injury
+
+```{r acs compare,  results='asis', echo=FALSE, include=TRUE}
+acs_table <- df_demo %>%
+  subset(., select = c(acsg_prev, acsg_curr, acsg_retain, acsi_prev, acsi_curr, acsi_retain, acsl_prev, acsl_curr, acsl_retain, acsf_prev, acsf_curr, acsf_retain, acss_prev, acss_curr, acss_retain, severity)) %>%
+  tbl_summary(
+    missing = "no",
+    by = severity,
+    type = list(
+      c(acsg_prev, acsg_curr, acsg_retain, acsi_prev, acsi_curr, acsi_retain, acsl_prev, acsl_curr, acsl_retain, acsf_prev, acsf_curr, acsf_retain, acss_prev, acss_curr, acss_retain) ~ "continuous",
+      c(severity) ~ "categorical"
+    ),
+    statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)"),
+    label = list(
+      acsg_prev ~ "ACS Global Before",
+      acsg_curr ~ "ACS Global Current",
+      acsg_retain ~ "Global Retained (%)",
+      acsi_prev ~ "ACS IADL Before",
+      acsi_curr ~ "ACS IADL Current",
+      acsi_retain ~ "IADL Retained (%)",
+      acsl_prev ~ "ACS Leisure Before",
+      acsl_curr ~ "ACS Leisure Current",
+      acsl_retain ~ "Leisure Retained (%)",
+      acsf_prev ~ "ACS Fitness Before",
+      acsf_curr ~ "ACS Fitness Current",
+      acsf_retain ~ "Fitness Retained (%)",
+      acss_prev ~ "ACS Social Before",
+      acss_curr ~ "ACS Social Current",
+      acss_retain ~ "Social Retained (%)",
+      severity ~ "Severity of Injury"
+    )
+  ) %>%
+  add_p(
+    test = list(all_continuous() ~ "t.test", all_categorical() ~ "chisq.test"),
+    pvalue_fun = ~style_pvalue(.x, digits = 2)
+  ) %>%
+  add_n()
+
+print(acs_table)   
+```
+
+```{r save tableACS, echo=FALSE, include=FALSE}
+#to save table to word doc
+library(gt)
+library(gtsummary)
+
+gt_acs_table <- as_gt(acs_table)
+   gtsave(gt_acs_table, filename = "demo_table_ACS.docx")
+```
+
+Below is the ttest for the specific t and p value for the difference between ACS3 previous social score, which was significantly different.
+
+```{r subset severity, echo=FALSE, include=TRUE}
+#significant difference in ACSS between groups. t-test for t value
+df_mod <- subset(df, severity == 2)
+df_severe <- subset(df, severity == 3)
+ttest_acsstotal <- t.test(df_mod$acss_prev, df_severe$acss_prev)
+print(ttest_acsstotal)
+```
+
+
+## FrSBe
+Comparison of self-regulation scores by severity
+
+```{r frsbe compare,  results='asis', echo=FALSE, include=TRUE}
+frsbe_table <- df_demo %>%
+  subset(., select = c(frsbe_exec, frsbe_disinhib, frsbe_apathy, frsbe_total, severity)) %>%
+  tbl_summary(
+    missing = "no",
+    by = severity,
+    type = list(
+      c(frsbe_exec, frsbe_disinhib, frsbe_apathy, frsbe_total) ~ "continuous",
+      c(severity) ~ "categorical"
+    ),
+    statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)"),
+    label = list(
+      frsbe_exec ~ "Executive function",
+      frsbe_disinhib ~ "Disinhibition",
+      frsbe_apathy ~ "Apathy",
+      frsbe_total ~ "Total FrSBe Score",
+      severity ~ "Severity of Injury"
+    )
+  ) %>%
+  add_p(
+    test = list(all_continuous() ~ "t.test", all_categorical() ~ "chisq.test"),
+    pvalue_fun = ~style_pvalue(.x, digits = 2)
+  ) %>%
+  add_n()
+
+print(frsbe_table)   
+```
+
+```{r save tableFrSBe, echo=FALSE, include=FALSE}
+#to save table to word doc
+library(gt)
+library(gtsummary)
+
+gt_frsbe_table <- as_gt(frsbe_table)
+   gtsave(gt_frsbe_table, filename = "table_FrSBe.docx")
+```
+
+## TBI QOL
+Comparison of subscales of TBI QOL measure by severity of injury
+
+```{r table subscales TBIQOL, results='asis', echo=FALSE, include=TRUE}
+tbiqol_table <- df_demo %>%
+  subset(., select = c(tbiqol_part_sra_tscore, tbiqol_anger_tscore, tbiqol_anxiety_tscore, tbiqol_comm_tscore, tbiqol_depression_tscore, tbiqol_dyscontrol_tscore, tbiqol_execfunc_tscore, tbiqol_fatigue_tscore, tbiqol_genconcern_tscore, tbiqol_headache_tscore, tbiqol_mobility_tscore, tbiqol_pain_tscore, tbiqol_posaffect_tscore, tbiqol_resilience_tscore, tbiqol_satissra_tscore, tbiqol_selfesteem_tscore, tbiqol_stigma_tscore, tbiqol_ue_tscore, severity)) %>%
+  tbl_summary(
+    missing = "no",
+    by = severity,
+    type = list(
+      c(tbiqol_part_sra_tscore, tbiqol_anger_tscore, tbiqol_anxiety_tscore, tbiqol_comm_tscore, tbiqol_depression_tscore, tbiqol_dyscontrol_tscore, tbiqol_execfunc_tscore, tbiqol_fatigue_tscore, tbiqol_genconcern_tscore, tbiqol_headache_tscore, tbiqol_mobility_tscore, tbiqol_pain_tscore, tbiqol_posaffect_tscore, tbiqol_resilience_tscore, tbiqol_satissra_tscore, tbiqol_selfesteem_tscore, tbiqol_stigma_tscore, tbiqol_ue_tscore) ~ "continuous",
+      c(severity) ~ "categorical"
+    ),
+    statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)"),
+    label = list(
+      tbiqol_part_sra_tscore ~ "Participation SRA",
+      tbiqol_anger_tscore ~ "Anger",
+      tbiqol_anxiety_tscore ~ "Anxiety",
+      tbiqol_comm_tscore ~ "Communication",
+      tbiqol_depression_tscore ~ "Depression",
+      tbiqol_dyscontrol_tscore ~ "Dyscontrol ",
+      tbiqol_execfunc_tscore ~ "EF",
+      tbiqol_fatigue_tscore ~ "Fatigue",
+      tbiqol_genconcern_tscore ~ "Gen Cognition",
+      tbiqol_headache_tscore ~ "Headache",
+      tbiqol_mobility_tscore ~ "Mobility ",
+      tbiqol_pain_tscore ~ "Pain",
+      tbiqol_posaffect_tscore ~ "Positive Effect",
+      tbiqol_resilience_tscore ~ "Resilience",
+      tbiqol_satissra_tscore ~ "Satisfaction SRA",
+      tbiqol_selfesteem_tscore ~ "Self esteem",
+      tbiqol_stigma_tscore ~ "Stigma",
+      tbiqol_ue_tscore ~ "Upper Extremity",
+      severity ~ "Severity of Injury"
+    )
+  ) %>%
+  add_p(
+    test = list(all_continuous() ~ "t.test", all_categorical() ~ "chisq.test"),
+    pvalue_fun = ~style_pvalue(.x, digits = 2)
+  ) %>%
+  add_n()
+
+print(tbiqol_table)
+```
+
+
+
+## TBI Composite
+Comparison of composite scores for TBI QOL by severity of injury. Composite scores were calculated using: 
+
+Tyner, C. E., Boulton, A. J., Sherer, M., Kisala, P. A., Glutting, J. J., & Tulsky, D. S. (2020). Development of Composite Scores for the TBI-QOL. Arch Phys Med Rehabil, 101(1), 43-53. https://doi.org/10.1016/j.apmr.2018.05.036 
+
+
+```{r tbiqol compare, results='asis', echo=FALSE, include=TRUE}
+tbiqol_composite_table <- df_demo %>%
+  subset(., select = c(phys_health_index, emo_health_index, cog_health_index, soc_health_index, glob_health_index, severity)) %>%
+  tbl_summary(
+    missing = "no",
+    by = severity,
+    type = list(
+      c(phys_health_index, emo_health_index, cog_health_index, soc_health_index, glob_health_index) ~ "continuous",
+      c(severity) ~ "categorical"
+    ),
+    statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)"),
+    label = list(
+      phys_health_index ~ "Physical Health Index",
+      emo_health_index ~ "Emotional Health Index",
+      cog_health_index ~ "Cognitive Health Index",
+      soc_health_index ~ "Social Health Index",
+      glob_health_index ~ "Global Health Index",
+      severity ~ "Severity of Injury"
+    )
+  ) %>%
+  add_p(
+    test = list(all_continuous() ~ "t.test", all_categorical() ~ "chisq.test"),
+    pvalue_fun = ~style_pvalue(.x, digits = 2)
+  ) %>%
+  add_n()
+
+print(tbiqol_composite_table)   
+```
+```{r save table TBIQOL composite, echo=FALSE, include=FALSE}
+#to save table to word doc
+library(gt)
+library(gtsummary)
+
+gt_tbiqol_composite_table <- as_gt(tbiqol_composite_table)
+   gtsave(gt_tbiqol_composite_table, filename = "tbiqol_composite.docx")
+```
+
+## Predictive variables 
+Table 2 in dissertation
+
+This table compares only the Personal and Environmental Protective factors and self-regulation outlined in the dissertation. Note that the Cognitive Health Composite score was not used as it includes executive functioning, which in this paper is considered a self-regulatory process. Therefore, general cognitive functioning was used which assesses memory and concentration.
+
+```{r included variables compare, results='asis', echo=FALSE, include=TRUE}
+PPF_table <- df_demo %>%
+  subset(., select = c(phys_health_index, emo_health_index, tbiqol_genconcern_tscore, bfi_extraversion, bfi_agreeable, bfi_consciousness, bfi_neuroticism, bfi_openness, income, marital_status, spstotal, frsbe_exec, frsbe_disinhib, frsbe_apathy, frsbe_total, severity)) %>%
+  tbl_summary(
+    missing = "no",
+    by = severity,
+    type = list(
+      c(phys_health_index, emo_health_index, tbiqol_genconcern_tscore, bfi_extraversion, bfi_agreeable, bfi_consciousness, bfi_neuroticism, bfi_openness) ~ "continuous",
+      c(severity) ~ "categorical"
+    ),
+    statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)"),
+    label = list(
+      phys_health_index ~ "Physical Health Index",
+      emo_health_index ~ "Emotional Health Index",
+      tbiqol_genconcern_tscore ~ "General Cognition",
+      bfi_extraversion ~ "Extraversion", 
+      bfi_agreeable ~ "Agreeable", 
+      bfi_consciousness ~ "Consciousness", 
+      bfi_neuroticism ~ "Neuroticism", 
+      bfi_openness ~ "Openness",
+      income ~ "Annual household income",
+      marital_status ~ "Marital status",
+      spstotal ~ "Social Support",
+      frsbe_exec ~ "Executive function",
+      frsbe_disinhib ~ "Disinhibition",
+      frsbe_apathy ~ "Apathy",
+      frsbe_total ~ "Total score",
+      severity ~ "Severity of Injury"
+    )
+  ) %>%
+  add_p(
+    test = list(all_continuous() ~ "t.test", all_categorical() ~ "chisq.test"),
+    pvalue_fun = ~style_pvalue(.x, digits = 2)
+  ) %>%
+  add_n()
+
+print(PPF_table)   
+```
+
+
+```{r save tableTotal, echo=FALSE, include=FALSE}
+#to save table to word doc
+library(gt)
+library(gtsummary)
+
+gt_PPF_table <- as_gt(PPF_table)
+   gtsave(gt_PPF_table, filename = "predictive_variables_table.docx")
+```
+
+Below is the t-test for SPS total, which was significantly different between severity of injury
+
+```{r ttest sps, echo=FALSE, include=TRUE}
+
+#significant difference in SPS between groups. t-test for t value
+
+ttest_spstotal <- t.test(df_mod$spstotal, df_severe$spstotal)
+print(ttest_spstotal)
+```
+
+# Descriptive Statistics
+Descriptive statistics for each variable of interest for the data set including mean, median, SD, and IQR, kurtosis and se
+
+```{r descriptive, echo=FALSE, include=TRUE, results='asis'}
+summary_stats <- describeBy(df) %>% round(2)
+
+# Display the summary statistics using kable
+knitr::kable(summary_stats)
+```
+
+
+
+
+## ACS3
+
+Outcome variable: ACS3 for all scores mean(sd)
+
+```{r table ACS mean(sd), results='asis', echo=FALSE, include=TRUE}
+mean_sd_acs <- df_demo %>%
+  subset(., select = c(acsg_prev, acsg_curr, acsg_retain, acsi_prev, acsi_curr, acsi_retain, acsl_prev, acsl_curr, acsl_retain, acsf_prev, acsf_curr, acsf_retain, acss_prev, acss_curr, acss_retain)) %>%
+  tbl_summary(
+    missing = "no",
+    type = list(
+      c(acsg_prev, acsg_curr, acsg_retain, acsi_prev, acsi_curr, acsi_retain, acsl_prev, acsl_curr, acsl_retain, acsf_prev, acsf_curr, acsf_retain, acss_prev, acss_curr, acss_retain) ~ "continuous"
+    ),
+    statistic = list(all_continuous() ~ "{mean} ({sd})"),
+    label = list(
+      acsg_prev ~ "ACS Global Before",
+      acsg_curr ~ "ACS Global Current",
+      acsg_retain ~ "Global Retained (%)",
+      acsi_prev ~ "ACS IADL Before",
+      acsi_curr ~ "ACS IADL Current",
+      acsi_retain ~ "IADL Retained (%)",
+      acsl_prev ~ "ACS Leisure Before",
+      acsl_curr ~ "ACS Leisure Current",
+      acsl_retain ~ "Leisure Retained (%)",
+      acsf_prev ~ "ACS Fitness Before",
+      acsf_curr ~ "ACS Fitness Current",
+      acsf_retain ~ "Fitness Retained (%)",
+      acss_prev ~ "ACS Social Before",
+      acss_curr ~ "ACS Social Current",
+      acss_retain ~ "Social Retained (%)"
+    )
+  ) 
+
+
+print(mean_sd_acs)   
+```
+
+# Correlations
+
+## All variables
+Correlation of all variables of interest with TBI QOL subscores. While too small to read in HTML print out, nice reference during analysis
+
+```{r all variables, fig.width=15,fig.height=15, results='asis', echo=FALSE, include=TRUE}
+library(ggplot2)
+library(reshape2)
+library(Hmisc)
+
+all_variables <- c("age_current", "time_injury", "gender", "edu", "work_current", "income", "severity", "substance", "acsg_prev", "acsg_curr", "acsg_retain", "acsi_prev", "acsi_curr", "acsi_retain", "acsl_prev", "acsl_curr", "acsl_retain", "acsf_prev", "acsf_curr", "acsf_retain", "acss_prev", "acss_curr", "acss_retain","tbiqol_part_sra_tscore", "tbiqol_anxiety_tscore", "tbiqol_comm_tscore", "tbiqol_ue_tscore","tbiqol_depression_tscore", "tbiqol_fatigue_tscore", "tbiqol_genconcern_tscore", "tbiqol_grief_tscore", "tbiqol_mobility_tscore", "tbiqol_headache_tscore", "tbiqol_pain_tscore", "tbiqol_resilience_tscore", "tbiqol_satissra_tscore", "tbiqol_selfesteem_tscore", "tbiqol_stigma_tscore", "spstotal", "bfi_extraversion", "bfi_agreeable", "bfi_consciousness", "bfi_neuroticism", "bfi_openness", "frsbe_apathy", "frsbe_exec", "frsbe_disinhib", "frsbe_total")
+
+all_variables <- intersect(all_variables, colnames(df))  # Ensure selected variables are in the dataframe
+
+all_variables_df <- df[, all_variables]
+
+cor_matrix <- rcorr(as.matrix(all_variables_df),type = "spearman")$r
+cor_matrix[upper.tri(cor_matrix)] <- NA
+p_matrix <- rcorr(as.matrix(all_variables_df),type = "spearman")$P
+p_matrix[is.na(p_matrix)]=.0000001
+p_matrix[upper.tri(p_matrix)] <- NA
+
+# Melt the correlation matrix for ggplot
+melted_cor <- melt(cor_matrix,na.rm = T)
+melted_p = melt(p_matrix,na.rm = T)
+
+melted_cor$p=melted_p$value
+melted_cor$psig=""
+melted_cor$psig[melted_cor$p<.05]="*"
+melted_cor$psig[melted_cor$p<.01]="**"
+melted_cor$psig[melted_cor$p<.001]="***"
+
+# Create a heatmap using ggplot2
+ggplot(melted_cor, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), vjust = 1, size = 2) +
+  geom_text(aes(label = psig), vjust = .25,size=5) +
+  scale_fill_gradient2(low = "purple", mid = "white", high = "orange", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(angle = 45, hjust = 1))+
+  labs(caption = "<.05 = *, <.01 = **, <.001 = ***")+
+  xlab("")+
+  ylab("")+
+  ggtitle("Correlation Matrix all variables")
+
+```
+
+
+```{r rename variables, results='asis', echo=FALSE, include=FALSE}
+#Rename Variables in new dataset
+df2 <- read_excel('/Users/amandagahlot/Documents/Dissertation/R_Output/cleaned_data_Final.xlsx')
+
+# Rename multiple variables
+df2 <- df2 %>%
+  rename(Global = acsg_retain,
+         IADL = acsi_retain,
+         Leisure = acsl_retain,
+         Fitness = acsf_retain,
+         Social = acss_retain,
+         Age = age_current,
+         TimeSinceInjury = time_injury,
+         Extraversion = bfi_extraversion,
+         Agreeable = bfi_agreeable,
+         Consciousness =bfi_consciousness,
+         Neuroticism = bfi_neuroticism,
+         Openness = bfi_openness,
+         Apathy = frsbe_apathy,
+         ExecFunc = frsbe_exec,
+         Disinhibition = frsbe_disinhib,
+         Total = frsbe_total,
+         SocialSupport = spstotal,
+         Communication = tbiqol_comm_tscore,
+         ExecFuncQOL = tbiqol_execfunc_tscore, 
+         GeneralCognition = tbiqol_genconcern_tscore,
+         UpperExtremity = tbiqol_ue_tscore, 
+         Fatigue = tbiqol_fatigue_tscore, 
+         Mobility = tbiqol_mobility_tscore, 
+         Headache = tbiqol_headache_tscore,
+         Pain = tbiqol_pain_tscore,
+         Anger = tbiqol_anger_tscore,
+         PositiveAffect = tbiqol_posaffect_tscore,
+         Age = age_current,
+         Education = edu,
+         Work = work_current,
+         SubstanceUse = substance,
+         Anxiety = tbiqol_anxiety_tscore, 
+         Depression = tbiqol_depression_tscore, 
+         Grief = tbiqol_grief_tscore, 
+         TraitResilience = tbiqol_resilience_tscore,  
+         SelfEsteem = tbiqol_selfesteem_tscore, 
+         Stigma = tbiqol_stigma_tscore,
+         TimeSinceInjury = time_injury,
+         MaritalStatus = marital_status,
+         SocialSupport = spstotal,
+         HouseholdSize = house_size,
+         PhysicalHealth = phys_health_index,
+         EmotionalHealth = emo_health_index)
+         
+
+         
+
+```
+
+Correlation matrix of PPF only (using composite TBIQOL Scores)
+
+```{r ppf corr, fig.width=15,fig.height=15, echo=FALSE, include=TRUE}
+library(ggplot2)
+library(reshape2)
+library(Hmisc)
+
+PPF_variables <- c("Global", "IADL", "Leisure", "Fitness", "Social", "PhysicalHealth", "EmotionalHealth", "GeneralCognition", "Extraversion", "Agreeable", "Consciousness", "Neuroticism", "Openness")
+
+PPF_variables <- intersect(PPF_variables, colnames(df2))  # Ensure selected variables are in the dataframe
+
+PPF_variables_df2 <- df2[, PPF_variables]
+
+cor_matrix <- rcorr(as.matrix(PPF_variables_df2),type = "spearman")$r
+cor_matrix[upper.tri(cor_matrix)] <- NA
+p_matrix <- rcorr(as.matrix(PPF_variables_df2),type = "spearman")$P
+p_matrix[is.na(p_matrix)]=.0000001
+p_matrix[upper.tri(p_matrix)] <- NA
+
+# Melt the correlation matrix for ggplot
+melted_cor <- melt(cor_matrix,na.rm = T)
+melted_p = melt(p_matrix,na.rm = T)
+
+melted_cor$p=melted_p$value
+melted_cor$psig=""
+melted_cor$psig[melted_cor$p<.05]="*"
+melted_cor$psig[melted_cor$p<.01]="**"
+melted_cor$psig[melted_cor$p<.001]="***"
+
+# Create a heatmap using ggplot2
+ggplot(melted_cor, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value,2)), vjust = 1) +
+  geom_text(aes(label = psig), vjust = .25,size=5) +
+  scale_fill_gradient2(low = "purple", mid = "white", high = "orange", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(angle = 45, hjust = 1))+
+  labs(caption = "<.05 = *, <.01 = **, <.001 = ***")+
+  xlab("")+
+  ylab("")+
+  ggtitle("Correlation Matrix Personal Protective Factors")
+
+
+```
+
+
+
+## Included Variables
+
+Matrix with heat map for all included variables in dissertation. Figure 4 in dissertation
+
+```{r ppf_only corr, fig.width=15,fig.height=15, echo=FALSE, include=TRUE}
+library(ggplot2)
+library(reshape2)
+library(Hmisc)
+
+# Define QOL_PPF_variables
+QOL_PPF_variables <- c("Global", "IADL", "Leisure", "Fitness", "Social", "PhysicalHealth", "GeneralCognition", "EmotionalHealth", "Extraversion", "Agreeable", "Consciousness", "Neuroticism", "Openness", "income", "MaritalStatus", "SocialSupport", "Apathy", "Disinhibition", "ExecFunc", "Total")
+
+# Ensure selected variables are in the dataframe
+QOL_PPF_variables <- intersect(QOL_PPF_variables, colnames(df2))
+
+# Extract relevant data
+QOL_PPF_df2 <- df2[, QOL_PPF_variables]
+
+# Calculate correlation matrix
+cor_matrix <- rcorr(as.matrix(QOL_PPF_df2), type = "spearman")$r
+cor_matrix[upper.tri(cor_matrix)] <- NA
+p_matrix <- rcorr(as.matrix(QOL_PPF_df2), type = "spearman")$P
+p_matrix[is.na(p_matrix)] <- .0000001
+p_matrix[upper.tri(p_matrix)] <- NA
+
+# Melt the correlation matrix for ggplot
+melted_cor <- melt(cor_matrix, na.rm = TRUE)
+melted_p <- melt(p_matrix, na.rm = TRUE)
+
+melted_cor$p <- melted_p$value
+melted_cor$psig <- ""
+melted_cor$psig[melted_cor$p < .05] <- "*"
+melted_cor$psig[melted_cor$p < .01] <- "**"
+melted_cor$psig[melted_cor$p < .001] <- "***"
+
+# Create a heatmap using ggplot2
+ggplot(melted_cor, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), vjust = 1, size=5, family = "Times New Roman") +
+  geom_text(aes(label = psig), vjust = .25, size = 5, family = "Times New Roman") +
+  scale_fill_gradient2(low = "purple", mid = "white", high = "orange", 
+                       midpoint = 0, limit = c(-1, 1), space = "Lab",
+                       name = "Correlation") +
+  theme_minimal(base_family = "Times New Roman") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, family = "Times New Roman"),
+        axis.text.y = element_text(angle = 45, hjust = 1, family = "Times New Roman"),
+        legend.position = "bottom",
+        legend.justification = "right",
+        legend.box = "horizontal") +
+  labs(caption = "<.05 = *, <.01 = **, <.001 = ***",
+       x = "",
+       y = "") +
+  ggtitle("Correlation Matrix Personal Protective Factors with ACS Variables") +
+  guides(fill = guide_colorbar(title.position = "right"))
+
+```
+
+
+Below is the breakdown of all TBIQOL sub scores with the ACS3. While not included in this study, 
+helpful for discussion and future publications.
+
+```{r subscale corr, fig.width=15,fig.height=15, echo=FALSE, include=TRUE}
+
+# Define QOL_variables
+QOL_variables <- c("Global", "IADL", "Leisure", "Fitness", "Social", "Anxiety", "Depression", "Grief", "Resilience", "SelfEsteem", "Stigma", "Communication", "GeneralCognition", "ExecFuncQOL", "UpperExtremity", "Fatigue", "Mobility", "Headache", "Pain")
+
+# Ensure selected variables are in the dataframe
+QOL_variables <- intersect(QOL_variables, colnames(df2))
+
+# Extract relevant data
+QOL_df2 <- df2[, QOL_variables]
+
+# Calculate correlation matrix
+cor_matrix <- rcorr(as.matrix(QOL_df2), type = "spearman")$r
+cor_matrix[upper.tri(cor_matrix)] <- NA
+p_matrix <- rcorr(as.matrix(QOL_df2), type = "spearman")$P
+p_matrix[is.na(p_matrix)] <- .0000001
+p_matrix[upper.tri(p_matrix)] <- NA
+
+# Melt the correlation matrix for ggplot
+melted_cor <- melt(cor_matrix, na.rm = TRUE)
+melted_p <- melt(p_matrix, na.rm = TRUE)
+
+melted_cor$p <- melted_p$value
+melted_cor$psig <- ""
+melted_cor$psig[melted_cor$p < .05] <- "*"
+melted_cor$psig[melted_cor$p < .01] <- "**"
+melted_cor$psig[melted_cor$p < .001] <- "***"
+
+# Create a heatmap using ggplot2
+ggplot(melted_cor, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value,2)), vjust = 1) +
+  geom_text(aes(label = psig), vjust = .25,size=5) +
+  scale_fill_gradient2(low = "purple", mid = "white", high = "orange", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(angle = 45, hjust = 1))+
+  labs(caption = "<.05 = *, <.01 = **, <.001 = ***")+
+  xlab("")+
+  ylab("")+
+  ggtitle("Correlation Matrix Personal Protective Factors with ACS Variables") +
+  guides(fill = guide_colorbar(title.position = "right"))
+
+```
+
+
+
+
+
+
+## FrSBe and TBI-QOL
+
+TBI QOL subscales with the FrSBe
+
+
+```{r qol and frsbe corr, fig.width=10,fig.height=8, echo=FALSE, include=TRUE}
+
+QOL_FRSBE_variables <- c("frsbe_apathy", "frsbe_disinhib", "frsbe_exec", "frsbe_total", "tbiqol_part_sra_tscore", "tbiqol_anxiety_tscore", "tbiqol_comm_tscore","tbiqol_ue_tscore","tbiqol_depression_tscore", "tbiqol_dyscontrol_tscoree", "tbiqol_execfunc_tscore", "tbiqol_fatigue_tscore", "tbiqol_genconcern_tscore", "tbiqol_grief_tscore", "tbiqol_mobility_tscore", "tbiqol_headache_tscore", "tbiqol_pain_tscore", "tbiqol_resilience_tscore", "tbiqol_satissra_tscore", "tbiqol_selfesteem_tscore", "tbiqol_stigma_tscore")
+
+QOL_FRSBE_variables <- intersect(QOL_FRSBE_variables, colnames(df))  # Ensure selected variables are in the dataframe
+
+QOL_FRSBE_df <- df[, QOL_FRSBE_variables]
+
+cor_matrix <- rcorr(as.matrix(QOL_FRSBE_df ),type = "spearman")$r
+cor_matrix[upper.tri(cor_matrix)] <- NA
+p_matrix <- rcorr(as.matrix(QOL_FRSBE_df ),type = "spearman")$P
+p_matrix[is.na(p_matrix)]=.0000001
+p_matrix[upper.tri(p_matrix)] <- NA
+
+# Melt the correlation matrix for ggplot
+melted_cor <- melt(cor_matrix,na.rm = T)
+melted_p = melt(p_matrix,na.rm = T)
+
+melted_cor$p=melted_p$value
+melted_cor$psig=""
+melted_cor$psig[melted_cor$p<.05]="*"
+melted_cor$psig[melted_cor$p<.01]="**"
+melted_cor$psig[melted_cor$p<.001]="***"
+
+# Create a heatmap using ggplot2
+ggplot(melted_cor, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value,2)), vjust = 1) +
+  geom_text(aes(label = psig), vjust = .25,size=5) +
+  scale_fill_gradient2(low = "purple", mid = "white", high = "orange", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(angle = 45, hjust = 1))+
+  labs(caption = "<.05 = *, <.01 = **, <.001 = ***")+
+  xlab("")+
+  ylab("")+
+  ggtitle("Correlation Matrix TBI-QOL Subscale and FrSBe Variables")
+```
+
+
+
+# RQ1: Regression Analysis
+
+Research Question 1
+1.	What is the relationship between protective factors and self-regulation with resiliency-related outcomes such as re-engagement in meaningful activities?
+a.	To what extent do protective factors and self-regulation predict resiliency-related outcomes in the TBI population?
+Hypothesis: Higher self-regulation will be associated with better resiliency-related outcomes
+b.	To what extent does self-regulation mediate or moderate the influence of protective factors on resiliency-related outcomes after TBI?
+Hypothesis: Self-regulation will impact the relationship between protective factors and resiliency-related outcomes
+
+## RQ1a
+First, we'll look at the hierarchical linear model as outlined in Chapter 3. Then, to dive deeper, a "post hoc" analysis of each subscale of the ACS and use AIC to determine model of best fit. 
+
+## ACS Global
+In this section, we'll do the original hierarchical model with protective and environmental protective factors in the first step and then total self-regulation score added for the second.
+*note that the cognitive composite score is not included as it includes exec functioning, which in this paper is seen as a self-regulatory process. therefore, gen concerns (memory and concentration) is used as cognitive protective factor
+
+```{r step 1, echo=TRUE, include=TRUE}
+step1 <- lm(acsg_retain~age_current, data=df)
+summary(step1)
+```
+
+```{r step 2, echo=TRUE, include=TRUE}
+step2<- lm(acsg_retain~age_current+phys_health_index+tbiqol_genconcern_tscore+emo_health_index+ spstotal, data=df)
+summary(step2)
+```
+
+```{r nested model 12 comparison, echo=TRUE, include=TRUE}
+#Nested Model Comparison
+anova(step1, step2)
+```
+
+```{r change in r-squared 12, echo=TRUE, include=TRUE}
+#change in R-squared
+summary(step2)$r.squared - summary(step1)$r.squared
+```
+
+```{r step 3, echo=TRUE, include=TRUE}
+step3<- lm(acsg_retain~age_current+phys_health_index+tbiqol_genconcern_tscore+emo_health_index+ spstotal+frsbe_total, data=df)
+summary(step3)
+```
+
+```{r nested model 23 comparison, echo=TRUE, include=TRUE}
+#Nested Model Comparison
+anova(step2, step3)
+```
+
+```{r change in r-squared 23, echo=TRUE, include=TRUE}
+#change in R-squared
+summary(step3)$r.squared - summary(step2)$r.squared
+```
+
+
+### Assumptions tested
+Test for multicollinearity
+
+```{r VIF, include=TRUE, echo=FALSE}
+library(car)
+vif(step3)
+```
+
+
+## Post Hoc AIC Models
+
+As we have a smaller n and need to be parsimonious with the variables we use in the regression model, we'll look at several models based on correlations (higher correlations added to the models) and then calculate the AIC. The lower AIC, the better the fit and that model will be used
+
+Note that all assumptions were tested for each model and were met
+
+
+
+### ACS3 Social
+
+```{r summary models AIC acss, echo=FALSE, include=TRUE}
+library(AICcmodavg)
+#composite scores
+model1 <- lm(acss_retain~phys_health_index+cog_health_index+emo_health_index+spstotal, data=df)
+
+model2 <- lm(acss_retain~phys_health_index+cog_health_index+emo_health_index+spstotal+frsbe_total, data=df)
+
+model3 <- lm(acss_retain~phys_health_index+cog_health_index+emo_health_index+spstotal+frsbe_apathy, data=df)
+
+#individual
+model4 <- lm(acss_retain~tbiqol_fatigue_tscore+tbiqol_genconcern_tscore+tbiqol_depression_tscore+tbiqol_anxiety_tscore+spstotal+spstotal, data=df)
+model5 <- lm(acss_retain~tbiqol_fatigue_tscore+tbiqol_genconcern_tscore+tbiqol_depression_tscore+tbiqol_anxiety_tscore+spstotal+frsbe_total, data=df)
+model6 <- lm(acss_retain~tbiqol_fatigue_tscore+tbiqol_genconcern_tscore+tbiqol_depression_tscore+tbiqol_anxiety_tscore+spstotal+frsbe_apathy, data=df)
+model7 <- lm(acss_retain~tbiqol_fatigue_tscore+tbiqol_genconcern_tscore+tbiqol_depression_tscore+tbiqol_anxiety_tscore+frsbe_apathy, data=df)
+model8 <- lm(acss_retain~tbiqol_fatigue_tscore+tbiqol_genconcern_tscore+tbiqol_depression_tscore+tbiqol_anxiety_tscore+frsbe_total, data=df) 
+model9 <- lm(acss_retain~tbiqol_fatigue_tscore+tbiqol_comm_tscore+tbiqol_depression_tscore+tbiqol_anxiety_tscore+frsbe_total, data=df)
+model10 <- lm(acss_retain~tbiqol_fatigue_tscore+tbiqol_comm_tscore+tbiqol_depression_tscore+tbiqol_anxiety_tscore+frsbe_total, data=df)
+model11 <- lm(acss_retain~tbiqol_fatigue_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+ tbiqol_depression_tscore+tbiqol_anxiety_tscore+frsbe_apathy, data=df)
+
+models <- list (model1, model2, model3, model4, model5, model6, model7, model8, model9, model10, model11)
+
+mod.names <- c('model1', 'model2', 'model3', 'model4', 'model5','model6', 'model7', 'model8', 'model9', 'model10', 'model11')
+
+aictab(cand.set = models, modnames = mod.names)
+```
+
+```{r summary model selected acss, echo=FALSE, include=TRUE}
+summary(model7)
+```
+### ACS3 IADL
+
+```{r summary of models AIC acgi, include=TRUE, echo=FALSE}
+library(AICcmodavg)
+#composite scores
+model1 <- lm(acsi_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+tbiqol_grief_tscore+spstotal+frsbe_total, data=df)
+model2 <- lm(acsi_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+tbiqol_grief_tscore+spstotal+frsbe_apathy, data=df)
+model3<- lm(acsi_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+tbiqol_grief_tscore+spstotal+frsbe_exec, data=df)
+model4 <- lm(acsi_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+spstotal+tbiqol_ue_tscore+frsbe_apathy, data=df)
+model5 <- lm(acsi_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+tbiqol_ue_tscore+spstotal+frsbe_apathy, data=df)
+model6<- lm(acsi_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+tbiqol_ue_tscore+frsbe_apathy, data=df)
+
+models <- list (model1, model2, model3, model4, model5, model6)
+
+mod.names <- c('model1', 'model2', 'model3', 'model4', 'model5','model6')
+
+aictab(cand.set = models, modnames = mod.names)
+```
+
+
+
+```{r model included acsi, echo=FALSE, include=FALSE}
+summary(model6)
+```
+
+
+### ACS3 Leisure
+
+```{r leisure acs AIC, echo=FALSE, include=TRUE}
+model1 <- lm (acsl_retain~tbiqol_mobility_tscore+tbiqol_ue_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+frsbe_total, data=df)
+model2 <- lm (acsl_retain~tbiqol_mobility_tscore+tbiqol_ue_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+tbiqol_grief_tscore+frsbe_total, data=df)
+model3 <-lm (acsl_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+frsbe_total, data=df)
+model4 <-lm (acsl_retain~tbiqol_mobility_tscore+tbiqol_grief_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+frsbe_total, data=df)
+model5 <-lm (acsl_retain~tbiqol_ue_tscore+tbiqol_grief_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+frsbe_total, data=df)
+model6 <-lm (acsl_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+frsbe_apathy, data=df)
+model7 <-lm (acsl_retain~tbiqol_mobility_tscore+tbiqol_genconcern_tscore+tbiqol_comm_tscore+frsbe_exec, data=df)
+
+models <- list (model1, model2, model3, model4, model5, model6, model7)
+
+mod.names <- c('model1', 'model2', 'model3', 'model4', 'model5', 'model6', 'model7')
+
+aictab(cand.set = models, modnames = mod.names)
+```
+
+```{r summary selected model acsl, echo=FALSE, include=TRUE}
+summary(model6)
+```
+
+### ACS3 Fitness
+
+```{r fitness AIC, echo=FALSE, include=TRUE}
+model1 <- lm (acsf_retain~tbiqol_mobility_tscore+tbiqol_pain_tscore+tbiqol_genconcern_tscore+tbiqol_anxiety_tscore+tbiqol_stigma_tscore+frsbe_total, data=df)
+model2 <- lm (acsf_retain~phys_health_index+tbiqol_genconcern_tscore+tbiqol_anxiety_tscore+tbiqol_stigma_tscore, data=df)
+model3 <-lm (acsf_retain~tbiqol_mobility_tscore+tbiqol_pain_tscore+tbiqol_genconcern_tscore+tbiqol_anxiety_tscore+tbiqol_grief_tscore, data=df)
+model4 <-lm (acsf_retain~phys_health_index+tbiqol_genconcern_tscore+tbiqol_anxiety_tscore+tbiqol_grief_tscore, data=df)
+model5 <- lm (acsf_retain~tbiqol_mobility_tscore+tbiqol_pain_tscore+tbiqol_genconcern_tscore+tbiqol_anxiety_tscore+tbiqol_grief_tscore+tbiqol_stigma_tscore, data=df)
+model6 <- lm (acsf_retain~tbiqol_mobility_tscore+tbiqol_pain_tscore+tbiqol_genconcern_tscore+tbiqol_anxiety_tscore+tbiqol_stigma_tscore+frsbe_total+income, data=df)
+model7 <- lm (acsf_retain~phys_health_index+tbiqol_genconcern_tscore+tbiqol_anxiety_tscore+tbiqol_stigma_tscore+frsbe_total+income, data=df)
+model8 <- lm (acsf_retain~phys_health_index+tbiqol_genconcern_tscore+tbiqol_anxiety_tscore+tbiqol_stigma_tscore+income, data=df)
+
+models <- list (model1, model2, model3, model4, model5, model6, model7, model8)
+
+mod.names <- c('model1', 'model2', 'model3', 'model4', 'model5', 'model6', 'model7', 'model8')
+
+aictab(cand.set = models, modnames = mod.names)
+```
+
+```{r selected model fitness, echo=FALSE, include=TRUE}
+summary(model8)
+```
+## RQ1b
+### Moderation 
+For moderation, looking at personal protective factors and environmental protective factors from original model
+```{r moderation mobility, include=TRUE, echo=FALSE}
+mod_acsg_phys <- lm(acsg_retain~phys_health_index*frsbe_total, data=df)
+summary(mod_acsg_phys)
+```
+```{r moderation gen concern, include=TRUE, echo=FALSE}
+mod_acsg_genconcern <- lm(acsg_retain~tbiqol_genconcern_tscore*frsbe_total, data=df)
+summary(mod_acsg_genconcern)
+```
+
+```{r moderation emo, include=TRUE, echo=FALSE}
+mod_acsg_emo <- lm(acsg_retain~emo_health_index*frsbe_total, data=df)
+summary(mod_acsg_emo)
+```
+
+```{r moderation SPS, include=TRUE, echo=FALSE}
+mod_acsg_sps <- lm(acsg_retain~spstotal*frsbe_total, data=df)
+summary(mod_acsg_sps)
+```
+There was no moderating effect of apathy on any of the predictors. 
+
+### Mediation
+
+Here we look at mediation effect of the total FrSBe scores on the personal and environmental factors used in the post hoc model (mobility, general cog functioning, anxiety, depression, and social support)
+
+How to read: 
+ACME = indirect effect
+ADE = direct effect
+ACME + ADE = total effect
+
+
+```{r load library mediation, echo=FALSE, include=FALSE}
+library(mediation)
+library(JSmediation)
+```
+#### Physical Health
+
+
+```{r mediation phys health}
+# Initial Model
+model1 <- lm(acsg_retain ~ phys_health_index, df) # Y ~ X, DV predicted by IV - no mediation considered - total effect
+summary(model1)
+
+# Mediation paths
+medmodel1 <- lm(frsbe_total ~ phys_health_index, df) # M ~ X, mediator predicted by X
+outputmodel1 <- lm(acsg_retain ~ phys_health_index + frsbe_total, df) # Y ~ X + M, DV predicted by mediator, adjusting for IV
+
+summary(medmodel1)
+summary(outputmodel1)
+
+
+# Mediation test
+mediation <- mediate(medmodel1, # Mediator model
+                    outputmodel1, # Outcome model
+                    boot = T, # Ask for bootstrapped confidence intervals
+                    treat="phys_health_index", # Name of the x variable
+                    mediator="frsbe_total" # Name of the m variable
+                    )
+# if you don't want bootstrap, just delete 'sims' line and set boot = F
+
+summary(mediation)
+plot(mediation)
+
+```
+There is a significant indirect effect and an insignificant direct effect, indicating total mediation
+
+```{r path mediation phys, echo=FALSE, include=TRUE}
+library(diagram)
+
+patha <- paste(round(as.numeric(coef(medmodel1)[2]),2))
+patha
+pathb <- paste(round(as.numeric(coef(outputmodel1)[3]),2))
+pathb
+
+# indirect
+direct <- paste(round(mediation$z.avg,2)) # direct
+total <- paste(round((mediation$d.avg + mediation$z.avg),2)) # total
+
+pathc <- paste(direct,"(",total,")")
+
+data <- c(0, patha, 0,
+          0, 0, 0, 
+          pathb, pathc, 0) # order: top = effect of IV on mediator; bottom left = effect of mediator on DV; bottom middle = direct effect (total effect)
+M<- matrix (nrow=3, ncol=3, byrow = TRUE, data=data)
+plot<- plotmat (M, pos=c(1,2), 
+                name= c("Self-regulation: Total","Physical Health", "ACS Global"), # order: Mediator, IV, DV 
+                box.type = "rect", box.size = 0.12, box.prop=0.5,  curve=0)
+
+```
+#### Cognitive Health
+
+```{r cog health index, echo=FALSE, include=TRUE}
+# MEDIATION
+# Initial Model
+model2 <- lm(acsg_retain ~ tbiqol_genconcern_tscore, df) # Y ~ X, DV predicted by IV - no mediation considered - total effect
+summary(model2)
+
+# Mediation paths
+medmodel2 <- lm(frsbe_total ~ tbiqol_genconcern_tscore, df) # M ~ X, mediator predicted by X
+outputmodel2 <- lm(acsg_retain ~ tbiqol_genconcern_tscore + frsbe_total, df) # Y ~ X + M, DV predicted by mediator, adjusting for IV
+
+summary(medmodel2)
+summary(outputmodel2)
+
+
+# Mediation test
+mediation <- mediate(medmodel2, # Mediator model
+                    outputmodel2, # Outcome model
+                    boot = T, # Ask for bootstrapped confidence intervals
+                    treat="tbiqol_genconcern_tscore", # Name of the x variable
+                    mediator="frsbe_total" # Name of the m variable
+                    )
+# if you don't want bootstrap, just delete 'sims' line and set boot = F
+
+summary(mediation)
+plot(mediation)
+```
+There is no significant indirect effect. No mediation
+
+#### Emotional Health
+
+
+```{r mediation emo health, echo=FALSE, include=TRUE}
+# Initial Model
+model1 <- lm(acsg_retain ~ emo_health_index, df) # Y ~ X, DV predicted by IV - no mediation considered - total effect
+summary(model1)
+
+# Mediation paths
+medmodel1 <- lm(frsbe_total ~ emo_health_index, df) # M ~ X, mediator predicted by X
+outputmodel1 <- lm(acsg_retain ~ emo_health_index + frsbe_total, df) # Y ~ X + M, DV predicted by mediator, adjusting for IV
+
+summary(medmodel1)
+summary(outputmodel1)
+
+
+# Mediation test
+mediation <- mediate(medmodel1, # Mediator model
+                    outputmodel1, # Outcome model
+                    boot = T, # Ask for bootstrapped confidence intervals
+                    treat="emo_health_index", # Name of the x variable
+                    mediator="frsbe_total" # Name of the m variable
+                    )
+# if you don't want bootstrap, just delete 'sims' line and set boot = F
+
+summary(mediation)
+plot(mediation)
+
+```
+There is no significant indirect effect indicating no mediation 
+```{r path mediation emo, echo=FALSE, include=TRUE}
+
+patha <- paste(round(as.numeric(coef(medmodel1)[2]),2))
+patha
+pathb <- paste(round(as.numeric(coef(outputmodel1)[3]),2))
+pathb
+
+# indirect
+direct <- paste(round(mediation$z.avg,2)) # direct
+total <- paste(round((mediation$d.avg + mediation$z.avg),2)) # total
+
+pathc <- paste(direct,"(",total,")")
+
+data <- c(0, patha, 0,
+          0, 0, 0, 
+          pathb, pathc, 0) # order: top = effect of IV on mediator; bottom left = effect of mediator on DV; bottom middle = direct effect (total effect)
+M<- matrix (nrow=3, ncol=3, byrow = TRUE, data=data)
+plot<- plotmat (M, pos=c(1,2), 
+                name= c("Self-regulation: Total","Emotional Health", "ACS Global"), # order: Mediator, IV, DV 
+                box.type = "rect", box.size = 0.12, box.prop=0.5,  curve=0)
+
+```
+#### SPS
+
+
+```{r mediation social support, echo=FALSE, include=TRUE}
+# Initial Model
+model1 <- lm(acsg_retain ~ spstotal, df) # Y ~ X, DV predicted by IV - no mediation considered - total effect
+summary(model1)
+
+# Mediation paths
+medmodel1 <- lm(frsbe_total ~ spstotal, df) # M ~ X, mediator predicted by X
+outputmodel1 <- lm(acsg_retain ~ spstotal + frsbe_total, df) # Y ~ X + M, DV predicted by mediator, adjusting for IV
+
+summary(medmodel1)
+summary(outputmodel1)
+
+
+# Mediation test
+mediation <- mediate(medmodel1, # Mediator model
+                    outputmodel1, # Outcome model
+                    boot = T, # Ask for bootstrapped confidence intervals
+                    treat="spstotal", # Name of the x variable
+                    mediator="frsbe_total" # Name of the m variable
+                    )
+# if you don't want bootstrap, just delete 'sims' line and set boot = F
+
+summary(mediation)
+plot(mediation)
+
+```
+There is a significant indirect effect and insignificant direct effect indicating full mediation 
+
+```{r path mediation social, echo=FALSE, include=TRUE}
+
+patha <- paste(round(as.numeric(coef(medmodel1)[2]),2))
+patha
+pathb <- paste(round(as.numeric(coef(outputmodel1)[3]),2))
+pathb
+
+# indirect
+direct <- paste(round(mediation$z.avg,2)) # direct
+total <- paste(round((mediation$d.avg + mediation$z.avg),2)) # total
+
+pathc <- paste(direct,"(",total,")")
+
+data <- c(0, patha, 0,
+          0, 0, 0, 
+          pathb, pathc, 0) # order: top = effect of IV on mediator; bottom left = effect of mediator on DV; bottom middle = direct effect (total effect)
+M<- matrix (nrow=3, ncol=3, byrow = TRUE, data=data)
+plot<- plotmat (M, pos=c(1,2), 
+                name= c("Self-regulation: Total","Social support", "ACS Global"), # order: Mediator, IV, DV 
+                box.type = "rect", box.size = 0.12, box.prop=0.5,  curve=0)
+```
+
+# RQ2: Time Since Injury
+2.	How does time since injury influence resiliency?
+a.	Is time after injury associated with an individual’s ability to re-engage in meaningful activities?
+b.	To what extent do the relationships between protective factors and self-regulatory processes with resiliency-related outcomes change with time since sustaining TBI?
+Hypothesis: Time since injury will be associated with resiliency, leading to different resiliency-related outcomes
+
+To answer these questions, first look at descriptive statistics, then regression model with time since injury included, lastly, investigate what, if any, role time since injury has on protective factors and self-regulation
+
+## Descriptives
+
+```{r summary time since injury, echo=FALSE, include=TRUE}
+selected_vars_acs <- c("time_injury")
+
+summary_table <- do.call(rbind, lapply(df[selected_vars_acs], function(x) round(summary(x), 2)))
+
+print(summary_table)
+```
+
+
+## Correlation ACS
+
+```{r corr time since injury with acsg, fig.width=15,fig.height=15, echo=FALSE, include=TRUE}
+# Define variables
+timesinceinjury_variables <- c("TimeSinceInjury", "Global", "IADL", "Leisure", "Fitness", "Social", "acsg_before", "acsg_after", "acsi_before", "acsi_after","acsl_before", "acsl_after","acsf_before", "acsf_after","acss_before", "acss_after")
+
+# Ensure selected variables are in the dataframe
+timesinceinjury_variables <- intersect(timesinceinjury_variables, colnames(df2))
+
+# Extract relevant data
+timesinceinjury_df2 <- df2[, timesinceinjury_variables]
+
+# Calculate correlation matrix
+cor_matrix <- rcorr(as.matrix(timesinceinjury_df2), type = "spearman")$r
+cor_matrix[upper.tri(cor_matrix)] <- NA
+p_matrix <- rcorr(as.matrix(timesinceinjury_df2), type = "spearman")$P
+p_matrix[is.na(p_matrix)] <- .0000001
+p_matrix[upper.tri(p_matrix)] <- NA
+
+# Melt the correlation matrix for ggplot
+melted_cor <- melt(cor_matrix, na.rm = TRUE)
+melted_p <- melt(p_matrix, na.rm = TRUE)
+
+melted_cor$p <- melted_p$value
+melted_cor$psig <- ""
+melted_cor$psig[melted_cor$p < .05] <- "*"
+melted_cor$psig[melted_cor$p < .01] <- "**"
+melted_cor$psig[melted_cor$p < .001] <- "***"
+
+# Create a heatmap using ggplot2
+ggplot(melted_cor, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), vjust = 1, family = "Times New Roman") +
+  geom_text(aes(label = psig), vjust = 0.25, size = 5, family = "Times New Roman") +
+  scale_fill_gradient2(low = "purple", mid = "white", high = "orange", 
+                       midpoint = 0, limit = c(-1, 1), space = "Lab",
+                       name = "Correlation") +
+  theme_minimal(base_family = "Times New Roman") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, family = "Times New Roman"),
+        axis.text.y = element_text(angle = 45, hjust = 1, family = "Times New Roman"),
+        legend.position = "bottom",
+        legend.justification = "right",
+        legend.box = "horizontal") +
+  labs(caption = "<.05 = *, <.01 = **, <.001 = ***",
+       x = "",
+       y = "") +
+  ggtitle("Correlation Matrix Personal Protective Factors with ACS Variables") +
+  guides(fill = guide_colorbar(title.position = "right"))
+
+```
+
+## Regression Analysis
+
+### Global ACS
+First, looking just at the relationship between time since injury and re-engagement while controlling for age.
+
+```{r regression time since injury, echo=FALSE, include=TRUE}
+model_timeinjury <- lm(acsg_retain~age_current+time_injury, data=df)
+summary(model_timeinjury)
+```
+Controlling for age, there is no significant relationship between time since injury and re-engagement
+
+### Social ACS3
+
+```{r regression time since injury social, echo=FALSE, include=TRUE}
+model_timeinjury_soc <- lm(acss_retain~age_current+time_injury, data=df)
+summary(model_timeinjury_soc)
+```
+
+### IADL ACS3
+
+```{r regression time since injury IADL, echo=FALSE, include=TRUE}
+model_timeinjury_iadl <- lm(acsi_retain~age_current+time_injury, data=df)
+summary(model_timeinjury_iadl)
+```
+
+### Leisure ACS3
+
+```{r regression time since injury leisure, echo=FALSE, include=TRUE}
+model_timeinjury_leisure <- lm(acsl_retain~age_current+time_injury, data=df)
+summary(model_timeinjury_leisure)
+```
+
+### Fitness ACS3
+
+```{r regression time since injury fitness, echo=FALSE, include=TRUE}
+model_timeinjury_fitness <- lm(acsf_retain~age_current+time_injury, data=df)
+summary(model_timeinjury_fitness)
+```
+
+## Hierarchical Regression: Step 4
+```{r step 4, echo=FALSE, include=TRUE}
+step4<- lm(acsg_retain~age_current+phys_health_index+tbiqol_genconcern_tscore+emo_health_index+ spstotal+frsbe_total+time_injury, data=df)
+summary(step4)
+```
+
+
+```{r nested model 34 comparison, echo=TRUE, include=TRUE}
+#Nested Model Comparison
+anova(step3, step4)
+```
+
+```{r change in r-squared 34, echo=TRUE, include=TRUE}
+#change in R-squared
+summary(step4)$r.squared - summary(step3)$r.squared
+```
+
+
+## POST HOC: Groups
+
+Because there was no significant relationship between time since injury and outcomes BUT it was a significant predictor in the model, I seperated time since recovery into three groups to examine relationships further. 
+Early = 6mo-3years
+Mid = 3 to 10 years
+Later = >10 years
+
+1= everything <=3 and 3 is everything >=10
+```{r creating new groups, echo=FALSE, include=FALSE}
+df_time3 <- read_excel('/Users/amandagahlot/Documents/Dissertation/R_Output/cleaned_data_Final.xlsx')
+df_time3$time_injury_ex <- ifelse(df_time3$time_injury <= 3, 'Early',
+                           ifelse(df_time3$time_injury < 10, 'Mid', 'Later'))
+
+```
+
+```{r convert, echo=FALSE, include=FALSE}
+# Convert df_time3$time_injury_ex to a factor
+df_time3$time_injury_ex <- factor(df_time3$time_injury_ex, levels = c("Early", "Mid", "Later"))
+
+# Convert the factor to numeric
+df_time3$time_injury_ex_numeric <- as.numeric(df_time3$time_injury_ex)
+
+```
+
+```{r export for python, echo=FALSE, include=FALSE}
+# Install and load the openxlsx package
+library(openxlsx)
+
+# Assuming df is your data frame
+write.xlsx(df_time3, file = "time_injury.xlsx", rowNames = FALSE)
+```
+
+
+```{r demo 3 groups, results='asis', echo=FALSE, include=TRUE}
+demo_table_time <- df_time3 %>%
+  subset(., select = c(time_injury_ex, age_current, work_current, substance, severity, acsg_retain, acss_retain, acsi_retain, acsl_retain, acsf_retain)) %>%
+  tbl_summary(
+    missing = "no",
+    by = time_injury_ex,
+    type = list(
+      c(age_current, substance, acsg_retain, acss_retain, acsi_retain, acsl_retain, acsf_retain) ~ "continuous",
+      c(work_current, severity) ~ "categorical"
+    ),
+    statistic = list(all_continuous() ~ "{mean} ({sd})", all_categorical() ~ "{n} ({p}%)"),
+    label = list(
+      age_current ~ "Age (years)",
+      time_injury_ex ~ "Early/Late Recovery",
+      work_current ~ "Employment status",
+      substance ~ "Substance use score",
+      severity ~ "Severity of Injury",
+      acsg_retain ~ "Global ACS",
+      acss_retain ~ "Social ACS",
+      acsi_retain ~ "IADL ACS",
+      acsl_retain ~ "Leisure ACS",
+      acsf_retain ~ "Fitness ACS"
+    )
+  ) 
+
+
+print(demo_table_time)   
+```
+
+```{r save new table time, echo=FALSE, include=FALSE}
+#to save table to word doc
+library(gt)
+library(gtsummary)
+
+gt_demo_table_time <- as_gt(demo_table_time)
+   gtsave(gt_demo_table_time, filename = "demo_table_time.docx")
+```
+
+
+```{r counts of new groups, echo=FALSE, include=TRUE}
+level_counts3 <- table(df_time3$time_injury_ex)
+
+# Displaying the counts
+print(level_counts3)
+```
+We see the counts of # participants in each group
+
+### Global
+Global ACS3 scores (ie, global re-engagement scores)
+```{r global 3, echo=FALSE, include=TRUE}
+group_by(df_time3, time_injury_ex) %>%
+  summarise(
+    count = n(),
+    mean = mean(acsg_retain, na.rm = TRUE),
+    sd = sd(acsg_retain, na.rm = TRUE)
+  )
+```
+
+```{r  vis global 3, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggboxplot(df_time3, x = "time_injury_ex", y = "acsg_retain",
+          color = "time_injury_ex", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("Early", "Mid", "Later"),
+          ylab = "Global Engagement", xlab = "Time Since Injury")
+```
+
+```{r vis global 3 to save, results='asis', echo=FALSE, include=FALSE}
+library("ggpubr")
+
+# Set global font to Times New Roman
+theme_set(theme_gray(base_family = "Times New Roman"))
+
+# Create the plot
+plot <- ggline(df_time3, x = "time_injury_ex", y = "acsg_retain",
+               add = c("mean_se", "jitter"),
+               order = c("Early", "Mid", "Late")) +
+        labs(x = "Time Since Injury", y = "Global Engagement", 
+             face = "bold", family = "Times New Roman")
+
+# Save the plot as a PNG file with DPI=300
+ggsave("plot.png", plot, dpi = 300)
+```
+```{r vis global 3 again, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "acsg_retain",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "Global Engagement", xlab = "Time Since Injury")
+```
+
+```{r anova global extreme, echo=FALSE, include=TRUE}
+res.aov <- aov(acsg_retain~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+```{r lm global, echo=FALSE, include=TRUE}
+model_timeinjury_ex <- lm(acsg_retain~age_current+time_injury_ex, data=df_time3)
+summary(model_timeinjury_ex)
+```
+Controlling for age, we see a significant relationship between time since injury and global re engagement- specifically between early and later recovery
+
+### Social
+social ACS3 scores (ie, social re-engagement scores)
+```{r Social 3, echo=FALSE, include=TRUE}
+group_by(df_time3, time_injury_ex) %>%
+  summarise(
+    count = n(),
+    mean = mean(acss_retain, na.rm = TRUE),
+    sd = sd(acss_retain, na.rm = TRUE)
+  )
+```
+
+```{r  vis Social 3, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggboxplot(df_time3, x = "time_injury_ex", y = "acss_retain",
+          color = "time_injury_ex", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("Early", "Mid", "Later"),
+          ylab = "Social Engagement", xlab = "Time Since Injury")
+```
+
+```{r vis Social 3 again, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "acss_retain",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "Social Engagement", xlab = "Time Since Injury")
+```
+
+```{r anova social 3, echo=FALSE, include=TRUE}
+res.aov <- aov(acss_retain~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+```{r lm social 3, echo=FALSE, include=TRUE}
+model_timeinjury_ex <- lm(acss_retain~age_current+time_injury_ex, data=df_time3)
+summary(model_timeinjury_ex)
+```
+
+### IADL
+IADL ACS3 scores (ie, IADL re-engagement scores)
+```{r IADL 3, echo=FALSE, include=TRUE}
+group_by(df_time3, time_injury_ex) %>%
+  summarise(
+    count = n(),
+    mean = mean(acsi_retain, na.rm = TRUE),
+    sd = sd(acsi_retain, na.rm = TRUE)
+  )
+```
+
+```{r  vis IADL 3, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggboxplot(df_time3, x = "time_injury_ex", y = "acsi_retain",
+          color = "time_injury_ex", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("Early", "Mid", "Later"),
+          ylab = "IADL Engagement", xlab = "Time Since Injury")
+```
+
+```{r vis IADL 3 again, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "acsi_retain",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "IADL Engagement", xlab = "Time Since Injury")
+```
+
+```{r anova IADL 3, echo=FALSE, include=TRUE}
+res.aov <- aov(acsi_retain~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+```{r lm IADL 3, echo=FALSE, include=TRUE}
+model_timeinjury_ex <- lm(acsi_retain~age_current+time_injury_ex, data=df_time3)
+summary(model_timeinjury_ex)
+```
+We see a significant difference between early and late groups with IADl engagement when controlling for age
+
+### Leisure
+Leisure ACS3 scores (ie, leisure re-engagement scores)
+```{r Leisure 3, echo=FALSE, include=TRUE}
+group_by(df_time3, time_injury_ex) %>%
+  summarise(
+    count = n(),
+    mean = mean(acsl_retain, na.rm = TRUE),
+    sd = sd(acsl_retain, na.rm = TRUE)
+  )
+```
+
+```{r  vis Leisure 3, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggboxplot(df_time3, x = "time_injury_ex", y = "acsl_retain",
+          color = "time_injury_ex", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("Early", "Mid", "Later"),
+          ylab = "Leisure Engagement", xlab = "Time Since Injury")
+```
+
+```{r vis Leisure 3 again, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "acsl_retain",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "Leisure Engagement", xlab = "Time Since Injury")
+```
+
+```{r anova Leisure 3, echo=FALSE, include=TRUE}
+res.aov <- aov(acsl_retain~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+```{r lm Leisure 3, echo=FALSE, include=TRUE}
+model_timeinjury_ex <- lm(acsl_retain~age_current+time_injury_ex, data=df_time3)
+summary(model_timeinjury_ex)
+```
+We see a significant difference between early and late groups with Leisure engagement when controlling for age
+
+### Fitness
+Fitness ACS3 scores (ie, fitness re-engagement scores)
+```{r Fitness 3, echo=FALSE, include=TRUE}
+group_by(df_time3, time_injury_ex) %>%
+  summarise(
+    count = n(),
+    mean = mean(acsf_retain, na.rm = TRUE),
+    sd = sd(acsf_retain, na.rm = TRUE)
+  )
+```
+
+```{r  visualize Fitness 3, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggboxplot(df_time3, x = "time_injury_ex", y = "acsg_retain",
+          color = "time_injury_ex", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("Early", "Mid", "Later"),
+          ylab = "Fitness Engagement", xlab = "Time Since Injury")
+```
+
+```{r vis Fitness 3 , echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "acsf_retain",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "Fitness Engagement", xlab = "Time Since Injury")
+```
+
+```{r anova Fitness 3, echo=FALSE, include=TRUE}
+res.aov <- aov(acsf_retain~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+```{r lm Fitness 3, echo=FALSE, include=TRUE}
+model_timeinjury_ex <- lm(acsf_retain~age_current+time_injury_ex, data=df_time3)
+summary(model_timeinjury_ex)
+```
+
+
+## Impact on Predictive Variables
+This is exploratory and post hoc analysis- likely unable to report to avoid p-hacking, more for information gathering
+
+### Correlations
+
+```{r corr time injury, echo=FALSE, results='asis', fig.width=15,fig.height=15, include=TRUE}
+library(ggplot2)
+library(reshape2)
+library(Hmisc)
+
+time_variables <- c('time_injury', 'acsg_retain', 'acss_retain', 'acsi_retain', 'acsl_retain', 'acsf_retain', 'phys_health_index', 'emo_health_index', 'tbiqol_genconcern_tscore', 'spstotal', 'frsbe_total')
+
+time_variables <- intersect(time_variables, colnames(df))  # Ensure selected variables are in the dataframe
+
+time_variables_df <- df[, time_variables]
+
+cor_matrix <- rcorr(as.matrix(time_variables_df),type = "spearman")$r
+cor_matrix[upper.tri(cor_matrix)] <- NA
+p_matrix <- rcorr(as.matrix(time_variables_df),type = "spearman")$P
+p_matrix[is.na(p_matrix)]=.0000001
+p_matrix[upper.tri(p_matrix)] <- NA
+
+# Create a heatmap using ggplot2
+ggplot(melted_cor, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value,2)), vjust = 1, size = 6) +  # Adjust size here
+  geom_text(aes(label = psig), vjust = .25, size = 6) +  # Adjust size here
+  scale_fill_gradient2(low = "purple", mid = "white", high = "orange", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 20),  # Adjust size here
+        axis.text.y = element_text(angle = 45, hjust = 1, size = 20),  # Adjust size here
+        axis.title = element_text(size = 14),
+        axis.ticks = element_line(size = 1)) +
+  labs(caption = "<.05 = *, <.01 = **, <.001 = ***") +
+  xlab("") +
+  ylab("") +
+  ggtitle("Correlation Matrix Personal Protective Factors Time Since Injury")
+
+ggsave("corr_matrix_time.png", plot, width = 15, height = 15)
+
+```
+
+```{rsaveplot, include=FALSE, echo=FALSE}
+
+```
+
+
+### Self Regulation
+
+```{r anova self-regulation, echo=FALSE, include=TRUE}
+res.aov <- aov(frsbe_total~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+
+```{r vis Frsbe 3, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "frsbe_total",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "Self-Regulation", xlab = "Time Since Injury")
+```
+
+### Physical Health
+
+```{r anova phys health, echo=FALSE, include=TRUE}
+res.aov <- aov(phys_health_index~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+
+```{r vis phys, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "phys_health_index",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "Physical Health", xlab = "Time Since Injury")
+```
+
+### Emotional Health
+
+```{r anova emo health, echo=FALSE, include=TRUE}
+res.aov <- aov(emo_health_index~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+
+```{r vis emo, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "emo_health_index",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Late"),
+       ylab = "Physical Health", xlab = "Time Since Injury")
+```
+
+### General Cognition
+
+```{r anova gen cog, echo=FALSE, include=TRUE}
+res.aov <- aov(tbiqol_genconcern_tscore~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+
+```{r vis gen cog, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "tbiqol_genconcern_tscore",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "Physical Health", xlab = "Time Since Injury")
+```
+
+
+### Social Support
+
+```{r anova socialsupport, echo=FALSE, include=TRUE}
+res.aov <- aov(tbiqol_genconcern_tscore~time_injury_ex, data=df_time3)
+summary(res.aov)
+```
+
+
+```{r vis socialsupport, echo=FALSE, include=TRUE}
+library("ggpubr")
+ggline(df_time3, x = "time_injury_ex", y = "spstotal",
+       add = c("mean_se", "jitter"),
+       order = c("Early", "Mid", "Later"),
+       ylab = "spstotal", xlab = "Time Since Injury")
+```
+
+## Cont Exploratory Analysis
+
+
+Below is the comparison of t-values for step 3 and step 4 to see if the inclusion of time since injury significantly changed the contribution of each variable in the model. (not sure this is an appropriate way to report in paper, but wanted to see...)
+
+
+```{r compare tvalue, echo=FALSE, include=TRUE}
+# Variables of interest
+variables <- c("age_current", "phys_health_index", "emo_health_index", "tbiqol_genconcern_tscore", "spstotal", "frsbe_total")
+
+# Initialize a data frame to store z-test results
+z_test_results <- data.frame(Variable = character(), z_score = numeric(), p_value = numeric(), stringsAsFactors = FALSE)
+
+# Perform z-test for each variable
+for (variable in variables) {
+  # Extract t-values for the variable from both models
+  t_value_step3 <- coef(summary(step3))[variable, "t value"]
+  t_value_step4 <- coef(summary(step4))[variable, "t value"]
+  
+  # Compute the difference between t-values
+  t_diff <- t_value_step3 - t_value_step4
+  
+  # Compute the standard error of the difference (assuming t-values are independent)
+  se_diff <- sqrt(coef(summary(step3))[variable, "Std. Error"]^2 + coef(summary(step4))[variable, "Std. Error"]^2)
+  
+  # Compute z-score
+  z_score <- t_diff / se_diff
+  
+  # Compute two-tailed p-value
+  p_value <- 2 * pnorm(-abs(z_score))
+  
+  # Store z-test result in data frame
+  z_test_results <- rbind(z_test_results, data.frame(Variable = variable, 
+                                                     z_score = z_score, 
+                                                     p_value = p_value))
+}
+
+# Print z-test results
+print(z_test_results)
+
+
+```
+
+# Selection for gift cards
+
+Create a sequence from 1 to 44
+numbers <- 1:46
+
+Randomly select 8 numbers
+selected_numbers <- sample(numbers, 8)
+
+Format the selected numbers with leading zeros
+formatted_numbers <- sprintf("%03d", selected_numbers)
+
+Print the selected numbers
+print(formatted_numbers)
+
+"020" "007" "006" "019" "024" "041" "013" "037"
+
+
+
